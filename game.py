@@ -14,10 +14,22 @@ class Game:
         # Figur an Blockposition x=3, y=0
         self.tetromino = Tetromino(3, 0, L_SHAPE, self.l_sprite)
 
+        # schwerkraft
+        self.fall_timer = 0
+        self.fall_interval = 500  # ms = 0.5 Sekunden pro Schritt
+
     def run(self):
         running = True
         while running:
             self.clock.tick(config.FPS)
+            self.fall_timer += self.clock.get_time()
+            if self.fall_timer > self.fall_interval:
+                self.fall_timer = 0
+                if not self.check_collision(0, 1):
+                    self.tetromino.y += 1
+                else:
+                    print("Landed!")
+
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
@@ -31,7 +43,7 @@ class Game:
                         self.move_tetromino(0, 1)
 
 
-            self.screen.fill((0, 0, 0))
+            self.screen.fill((100, 100, 100))
             self.tetromino.draw(self.screen)
             pygame.display.flip()
     
@@ -43,3 +55,17 @@ class Game:
         if 0 <= new_x <= config.COLS - 4 and 0 <= new_y <= config.ROWS - 4:
             self.tetromino.x = new_x
             self.tetromino.y = new_y
+
+    def check_collision(self, dx, dy):
+        new_x = self.tetromino.x + dx
+        new_y = self.tetromino.y + dy
+
+        # untere Spielfeldgrenze prüfen
+        for row_idx, row in enumerate(self.tetromino.shape):
+            for col_idx, cell in enumerate(row):
+                if cell:
+                    abs_x = new_x + col_idx
+                    abs_y = new_y + row_idx
+                    if abs_y >= config.ROWS:
+                        return True  # Kollision mit Boden
+        return False
