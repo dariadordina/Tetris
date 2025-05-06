@@ -22,6 +22,24 @@ class Game:
                 if event.type == pygame.QUIT:
                     running = False
 
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_LEFT:
+                        self.move_tetromino(-1, 0)
+                    elif event.key == pygame.K_RIGHT:
+                        self.move_tetromino(1, 0)
+                    elif event.key == pygame.K_DOWN:
+                        self.move_tetromino(0, 1)
+
+
             self.screen.fill((0, 0, 0))
             self.tetromino.draw(self.screen)
             pygame.display.flip()
+    
+    def move_tetromino(self, dx, dy):
+        new_x = self.tetromino.x + dx
+        new_y = self.tetromino.y + dy
+
+        # Spielfeldgrenzen prüfen
+        if 0 <= new_x <= config.COLS - 4 and 0 <= new_y <= config.ROWS - 4:
+            self.tetromino.x = new_x
+            self.tetromino.y = new_y
