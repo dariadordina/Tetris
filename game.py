@@ -50,13 +50,14 @@ class Game:
                 self.fall_timer += self.clock.get_time()
                 if self.fall_timer > self.fall_interval:
                     self.fall_timer = 0
+                    #print("→ Prüfe Kollision nach unten")  # Debug!
                     if not self.check_collision(0, 1):
                         self.tetromino.y += 1
                     else:
-                        print("Landed!")
+                        #print("Landed!")
                         self.landed = True
-
                         self.lock_tetromino()
+                        self.clear_lines()
                         self.tetromino = self.spawn_new_tetromino()
                         self.landed = False
 
@@ -78,13 +79,60 @@ class Game:
             # Anzeige aktualisieren
             pygame.display.flip()
 
-    
+    def check_collision(self, dx, dy):
+        new_x = self.tetromino.x + dx
+        new_y = self.tetromino.y + dy
+
+        for row_idx, row in enumerate(self.tetromino.shape):
+            for col_idx, cell in enumerate(row):
+                if cell:
+                    abs_x = new_x + col_idx
+                    abs_y = new_y + row_idx
+
+                    # Kollision mit Boden
+                    if abs_y >= config.ROWS:
+                        return True
+
+                    # Kollision mit Seiten
+                    if abs_x < 0 or abs_x >= config.COLS:
+                        return True
+
+                    if 0 <= abs_y < config.ROWS and 0 <= abs_x < config.COLS:
+                        content = self.grid[abs_y][abs_x]
+                        #print(f"Rastercheck an x={abs_x}, y={abs_y}: {content=}")
+                        if content is not None:
+                            #print("→ Kollision mit Raster erkannt!")
+                            return True
+
+        return False
+
+
+
+
+
+    def clear_lines(self):
+        new_grid = []
+        lines_cleared = 0
+
+        for row in self.grid:
+            if all(cell is not None for cell in row):
+                lines_cleared += 1
+            else:
+                new_grid.append(row)
+
+        # Leere Zeilen oben hinzufügen
+        for _ in range(lines_cleared):
+            new_grid.insert(0, [None for _ in range(config.COLS)])
+
+        self.grid = new_grid
+
     def spawn_new_tetromino(self):
         choice = random.choice(SHAPES)
         image = pygame.image.load(choice["image"]).convert_alpha()
         return Tetromino(3, 0, choice["matrix"], image, choice["color"])
     
     def lock_tetromino(self):
+        #print("LOCK: Figur wird ins Raster geschrieben")
         for row_idx, row in enumerate(self.tetromino.shape):
             for col_idx, cell in enumerate(row):
                 if cell:
@@ -101,17 +149,3 @@ class Game:
         if 0 <= new_x <= config.COLS - 4 and 0 <= new_y <= config.ROWS - 4:
             self.tetromino.x = new_x
             self.tetromino.y = new_y
-
-    def check_collision(self, dx, dy):
-        new_x = self.tetromino.x + dx
-        new_y = self.tetromino.y + dy
-
-        # untere Spielfeldgrenze prüfen
-        for row_idx, row in enumerate(self.tetromino.shape):
-            for col_idx, cell in enumerate(row):
-                if cell:
-                    abs_x = new_x + col_idx
-                    abs_y = new_y + row_idx
-                    if abs_y >= config.ROWS:
-                        return True  # Kollision mit Boden
-        return False

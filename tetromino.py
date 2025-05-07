@@ -46,13 +46,23 @@ T_SHAPE = [
 
 
 class Tetromino:
-    def __init__(self, x, y, shape_matrix, image, color):
-        self.x = x  # in Block-Einheiten
+    def __init__(self, x, y, shape, image, color):
+        self.x = x
         self.y = y
-        self.shape = shape_matrix  # bleibt für Kollision etc. erhalten
-        self.image = image  # ganzes Sprite (128x128 px)
+        self.shape = shape
+        self.image = image
         self.color = color
+        #self.bottom_offset = self._calc_bottom_offset()   # ⬅︎ hier merken
 
+    '''
+    def _calc_bottom_offset(self):
+        empty = 0
+        for row in reversed(self.shape):
+            if any(row):
+                break
+            empty += 1        # 0, 1 oder 2 leere Zeilen
+        return empty
+    '''
     def draw(self, surface):
         px = self.x * config.BLOCK_SIZE
         py = self.y * config.BLOCK_SIZE
