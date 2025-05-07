@@ -44,6 +44,12 @@ T_SHAPE = [
     [0, 0, 0, 0],
 ]
 
+J_SHAPE = [
+    [0, 0, 0, 0],
+    [1, 1, 1, 0],
+    [1, 0, 0, 0],
+    [0, 0, 0, 0],
+]
 
 def rotate_cw(matrix):
     return [list(row) for row in zip(*matrix[::-1])]
