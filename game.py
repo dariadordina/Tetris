@@ -1,6 +1,14 @@
 import pygame
 import config
+import random
 from tetromino import Tetromino, L_SHAPE, O_SHAPE, I_SHAPE, S_SHAPE, Z_SHAPE, T_SHAPE
+
+SHAPES = [
+    {"matrix": Z_SHAPE, "image": "assets/Z-block.png", "color": (100, 200, 100)}, #kater, grün
+    {"matrix": L_SHAPE, "image": "assets/L-block.png", "color": (200, 100, 100)}, #..., ...
+    {"matrix": O_SHAPE, "image": "assets/O-block.png", "color": (100, 100, 200)}, #..., ...
+
+]
 
 class Game:
     def __init__(self):
@@ -8,33 +16,55 @@ class Game:
         pygame.display.set_caption("Tetris-Geschenk")
         self.clock = pygame.time.Clock()
 
+        self.grid = [[None for _ in range(config.COLS)] for _ in range(config.ROWS)]
         # ganzes 128x128-Bild laden
-        self.l_sprite = pygame.image.load("assets/L-block.png").convert_alpha()
+        #self.l_sprite = pygame.image.load("assets/L-block.png").convert_alpha()
 
         # Figur an Blockposition x=3, y=0
-        self.tetromino = Tetromino(3, 0, L_SHAPE, self.l_sprite)
+        self.tetromino = self.spawn_new_tetromino()
+        #self.tetromino = Tetromino(3, 0, L_SHAPE, self.l_sprite)
 
         # schwerkraft
         self.fall_timer = 0
         self.fall_interval = 500  # ms = 0.5 Sekunden pro Schritt
+        self.landed = False
 
     def run(self):
         running = True
         while running:
             self.clock.tick(config.FPS)
-            self.fall_timer += self.clock.get_time()
-            if self.fall_timer > self.fall_interval:
-                self.fall_timer = 0
-                if not self.check_collision(0, 1):
-                    self.tetromino.y += 1
-                else:
-                    print("Landed!")
+            self.screen.fill((100, 100, 100))  # ⬅️ HINTERGRUND zuerst!
 
+            # Raster zeichnen (gelandete Blöcke)
+            for y, row in enumerate(self.grid):
+                for x, color in enumerate(row):
+                    if color:
+                        pygame.draw.rect(
+                            self.screen,
+                            color,
+                            (x * config.BLOCK_SIZE, y * config.BLOCK_SIZE, config.BLOCK_SIZE, config.BLOCK_SIZE)
+                        )
+
+            # Fallbewegung
+            if not self.landed:
+                self.fall_timer += self.clock.get_time()
+                if self.fall_timer > self.fall_interval:
+                    self.fall_timer = 0
+                    if not self.check_collision(0, 1):
+                        self.tetromino.y += 1
+                    else:
+                        print("Landed!")
+                        self.landed = True
+
+                        self.lock_tetromino()
+                        self.tetromino = self.spawn_new_tetromino()
+                        self.landed = False
+
+            # Tasteneingaben
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
-
-                elif event.type == pygame.KEYDOWN:
+                elif event.type == pygame.KEYDOWN and not self.landed:
                     if event.key == pygame.K_LEFT:
                         self.move_tetromino(-1, 0)
                     elif event.key == pygame.K_RIGHT:
@@ -42,11 +72,27 @@ class Game:
                     elif event.key == pygame.K_DOWN:
                         self.move_tetromino(0, 1)
 
-
-            self.screen.fill((100, 100, 100))
+            # Aktive Figur zeichnen
             self.tetromino.draw(self.screen)
+
+            # Anzeige aktualisieren
             pygame.display.flip()
+
     
+    def spawn_new_tetromino(self):
+        choice = random.choice(SHAPES)
+        image = pygame.image.load(choice["image"]).convert_alpha()
+        return Tetromino(3, 0, choice["matrix"], image, choice["color"])
+    
+    def lock_tetromino(self):
+        for row_idx, row in enumerate(self.tetromino.shape):
+            for col_idx, cell in enumerate(row):
+                if cell:
+                    grid_x = self.tetromino.x + col_idx
+                    grid_y = self.tetromino.y + row_idx
+                    if 0 <= grid_x < config.COLS and 0 <= grid_y < config.ROWS:
+                        self.grid[grid_y][grid_x] = self.tetromino.color
+
     def move_tetromino(self, dx, dy):
         new_x = self.tetromino.x + dx
         new_y = self.tetromino.y + dy

@@ -46,11 +46,12 @@ T_SHAPE = [
 
 
 class Tetromino:
-    def __init__(self, x, y, shape_matrix, image):
+    def __init__(self, x, y, shape_matrix, image, color):
         self.x = x  # in Block-Einheiten
         self.y = y
         self.shape = shape_matrix  # bleibt für Kollision etc. erhalten
         self.image = image  # ganzes Sprite (128x128 px)
+        self.color = color
 
     def draw(self, surface):
         px = self.x * config.BLOCK_SIZE
