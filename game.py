@@ -72,12 +72,15 @@ class Game:
                         self.move_tetromino(1, 0)
                     elif event.key == pygame.K_DOWN:
                         self.move_tetromino(0, 1)
+                    elif event.key == pygame.K_UP:
+                        self.tetromino.rotate(self.grid)
 
             # Aktive Figur zeichnen
             self.tetromino.draw(self.screen)
 
             # Anzeige aktualisieren
             pygame.display.flip()
+
 
     def check_collision(self, dx, dy):
         new_x = self.tetromino.x + dx
@@ -105,10 +108,6 @@ class Game:
                             return True
 
         return False
-
-
-
-
 
     def clear_lines(self):
         new_grid = []
