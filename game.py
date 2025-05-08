@@ -39,7 +39,8 @@ class Game:
         while running:
             self.clock.tick(config.FPS)
             self.screen.fill((100, 100, 100))  # ⬅️ HINTERGRUND zuerst!
-
+            self.draw_grid(self.screen)
+            '''
             # Raster zeichnen (gelandete Blöcke)
             for y, row in enumerate(self.grid):
                 for x, color in enumerate(row):
@@ -49,7 +50,7 @@ class Game:
                             color,
                             (x * config.BLOCK_SIZE, y * config.BLOCK_SIZE, config.BLOCK_SIZE, config.BLOCK_SIZE)
                         )
-
+            '''
             # Fallbewegung
             if not self.landed:
                 self.fall_timer += self.clock.get_time()
@@ -62,7 +63,8 @@ class Game:
                         #print("Landed!")
                         self.landed = True
                         self.lock_tetromino()
-                        self.clear_lines()
+                        self.mark_lines_for_removal()
+                        self.clear_marked_lines()
                         self.tetromino = self.spawn_new_tetromino()
                         self.landed = False
 
@@ -86,6 +88,24 @@ class Game:
             # Anzeige aktualisieren
             pygame.display.flip()
 
+    def draw_grid(self, surface):
+        bs = config.BLOCK_SIZE
+        for y, row in enumerate(self.grid):
+            for x, cell in enumerate(row):
+                if not cell:
+                    continue
+
+                typ = cell["type"]
+                if typ == "image_leader":
+                    off_c, off_r = cell["offset"]
+                    px = (x - off_c) * bs
+                    py = (y - off_r) * bs
+                    surface.blit(cell["image"], (px, py))
+
+                elif typ == "color":
+                    pygame.draw.rect(surface, cell["color"],
+                                    (x * bs, y * bs, bs, bs))
+                # "filled" ⇒ nichts zeichnen
 
     def check_collision(self, dx, dy):
         new_x = self.tetromino.x + dx
@@ -114,36 +134,55 @@ class Game:
 
         return False
 
-    def clear_lines(self):
-        new_grid = []
-        lines_cleared = 0
-
-        for row in self.grid:
-            if all(cell is not None for cell in row):
-                lines_cleared += 1
-            else:
-                new_grid.append(row)
-
-        # Leere Zeilen oben hinzufügen
-        for _ in range(lines_cleared):
+    def clear_marked_lines(self):
+        new_grid = [row for row in self.grid if not all(cell and cell["type"] == "color" for cell in row)]
+        lines_removed = config.ROWS - len(new_grid)
+        for _ in range(lines_removed):
             new_grid.insert(0, [None for _ in range(config.COLS)])
-
         self.grid = new_grid
 
+    def mark_lines_for_removal(self):
+        for y, row in enumerate(self.grid):
+            if all(cell is not None for cell in row):
+                for x, cell in enumerate(row):
+                    if cell:
+                        cell["type"] = "color"   
+                        
     def spawn_new_tetromino(self):
         choice = random.choice(SHAPES)
         image = pygame.image.load(choice["image"]).convert_alpha()
         return Tetromino(3, 0, choice["matrix"], image, choice["color"])
     
     def lock_tetromino(self):
-        #print("LOCK: Figur wird ins Raster geschrieben")
-        for row_idx, row in enumerate(self.tetromino.shape):
-            for col_idx, cell in enumerate(row):
-                if cell:
-                    grid_x = self.tetromino.x + col_idx
-                    grid_y = self.tetromino.y + row_idx
-                    if 0 <= grid_x < config.COLS and 0 <= grid_y < config.ROWS:
-                        self.grid[grid_y][grid_x] = self.tetromino.color
+        # linke-obere belegte Matrix-Zelle bestimmen
+        base_r, base_c = None, None
+        for r in range(4):
+            row = self.tetromino.shape[r]
+            if 1 in row:
+                base_r = r
+                base_c = row.index(1)
+                break
+
+        for r, row in enumerate(self.tetromino.shape):
+            for c, cell in enumerate(row):
+                if not cell:
+                    continue
+
+                gx = self.tetromino.x + c
+                gy = self.tetromino.y + r
+                if gx < 0 or gx >= config.COLS or gy < 0 or gy >= config.ROWS:
+                    continue
+
+                if r == base_r and c == base_c:          # Leader-Zelle
+                    self.grid[gy][gx] = {
+                        "type":   "image_leader",
+                        "image":  self.tetromino.image,
+                        "offset": (base_c, base_r),
+                        "color":  self.tetromino.color
+                    }
+                else:                                     # nur belegt
+                    self.grid[gy][gx] = {"type": "filled"}
+
 
     def move_tetromino(self, dx, dy):
         new_x = self.tetromino.x + dx
