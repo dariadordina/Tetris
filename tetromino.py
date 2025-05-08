@@ -74,7 +74,6 @@ class Tetromino:
         # sonst passiert nichts – Figur bleibt wie sie war
 
     def check_coll(self, test_shape, grid):
-        """Hilfsfunktion für Drehung: testet, ob eine Form ins Raster passt."""
         for row_idx, row in enumerate(test_shape):
             for col_idx, cell in enumerate(row):
                 if cell:
