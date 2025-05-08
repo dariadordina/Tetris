@@ -31,7 +31,7 @@ class Game:
 
         # schwerkraft
         self.fall_timer = 0
-        self.fall_interval = 500  # ms = 0.5 Sekunden pro Schritt
+        self.fall_interval = 400  # ms = 0.5 Sekunden pro Schritt
         self.landed = False
 
     def run(self):
@@ -72,13 +72,21 @@ class Game:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
+
                 elif event.type == pygame.KEYDOWN and not self.landed:
+                    # LINKS
                     if event.key == pygame.K_LEFT:
                         self.move_tetromino(-1, 0)
+
+                    # RECHTS
                     elif event.key == pygame.K_RIGHT:
                         self.move_tetromino(1, 0)
+
+                    # SCHNELL NACH UNTEN
                     elif event.key == pygame.K_DOWN:
                         self.move_tetromino(0, 1)
+
+                    # DREHEN
                     elif event.key == pygame.K_UP:
                         self.tetromino.rotate(self.grid)
 
@@ -96,16 +104,14 @@ class Game:
                     continue
 
                 typ = cell["type"]
-                if typ == "image_leader":
-                    off_c, off_r = cell["offset"]
-                    px = (x - off_c) * bs
-                    py = (y - off_r) * bs
+                if typ == "row_leader":
+                    px = (x - cell["offset"]) * bs
+                    py = y * bs
                     surface.blit(cell["image"], (px, py))
 
                 elif typ == "color":
                     pygame.draw.rect(surface, cell["color"],
                                     (x * bs, y * bs, bs, bs))
-                # "filled" ⇒ nichts zeichnen
 
     def check_collision(self, dx, dy):
         new_x = self.tetromino.x + dx
@@ -144,26 +150,37 @@ class Game:
     def mark_lines_for_removal(self):
         for y, row in enumerate(self.grid):
             if all(cell is not None for cell in row):
-                for x, cell in enumerate(row):
-                    if cell:
-                        cell["type"] = "color"   
-                        
+                base_color = next(
+                    (cell.get("color") for cell in row if "color" in cell),
+                    (180, 180, 180)
+                )
+                for cell in row:
+                    cell["type"]  = "color"
+                    cell["color"] = base_color
+                    cell.pop("image", None)
+
+
     def spawn_new_tetromino(self):
         choice = random.choice(SHAPES)
         image = pygame.image.load(choice["image"]).convert_alpha()
         return Tetromino(3, 0, choice["matrix"], image, choice["color"])
     
     def lock_tetromino(self):
-        # linke-obere belegte Matrix-Zelle bestimmen
-        base_r, base_c = None, None
-        for r in range(4):
-            row = self.tetromino.shape[r]
-            if 1 in row:
-                base_r = r
-                base_c = row.index(1)
-                break
+        bs   = config.BLOCK_SIZE          # 32 px
+        full = self.tetromino.image       # 128 × 128
 
         for r, row in enumerate(self.tetromino.shape):
+            # prüfe, ob die Matrix-Zeile Blöcke enthält
+            if not any(row):
+                continue
+
+            # Zeilen-Sprite (128 × 32) ausschneiden
+            strip = pygame.Surface((bs * 4, bs), pygame.SRCALPHA)
+            strip.blit(full, (0, 0), (0, r * bs, bs * 4, bs))
+
+            # linkeste belegte Spalte dieser Matrix-Zeile
+            lead_c = row.index(1)
+
             for c, cell in enumerate(row):
                 if not cell:
                     continue
@@ -173,22 +190,19 @@ class Game:
                 if gx < 0 or gx >= config.COLS or gy < 0 or gy >= config.ROWS:
                     continue
 
-                if r == base_r and c == base_c:          # Leader-Zelle
+                if c == lead_c:                          # Row-Leader
                     self.grid[gy][gx] = {
-                        "type":   "image_leader",
-                        "image":  self.tetromino.image,
-                        "offset": (base_c, base_r),
-                        "color":  self.tetromino.color
+                        "type":  "row_leader",
+                        "image": strip,
+                        "offset": lead_c,                # wie weit nach rechts blitten?
+                        "color": self.tetromino.color
                     }
-                else:                                     # nur belegt
+                else:                                    # reine Füllzelle
                     self.grid[gy][gx] = {"type": "filled"}
 
 
     def move_tetromino(self, dx, dy):
-        new_x = self.tetromino.x + dx
-        new_y = self.tetromino.y + dy
-
-        # Spielfeldgrenzen prüfen
-        if 0 <= new_x <= config.COLS - 4 and 0 <= new_y <= config.ROWS - 4:
-            self.tetromino.x = new_x
-            self.tetromino.y = new_y
+        # Prüfe: würde die Figur nach dx,dy kollidieren?
+        if not self.check_collision(dx, dy):
+            self.tetromino.x += dx
+            self.tetromino.y += dy
