@@ -34,23 +34,24 @@ class Game:
         self.fall_interval = 400  # ms = 0.5 Sekunden pro Schritt
         self.landed = False
 
+        self.score       = 0          # aktuelle Punkte
+        self.lines_total = 0          # insgesamt gelöschte Zeilen
+        self.level       = 1          # Startlevel
+
     def run(self):
         running = True
         while running:
+    
             self.clock.tick(config.FPS)
             self.screen.fill((100, 100, 100))  # ⬅️ HINTERGRUND zuerst!
             self.draw_grid(self.screen)
-            '''
-            # Raster zeichnen (gelandete Blöcke)
-            for y, row in enumerate(self.grid):
-                for x, color in enumerate(row):
-                    if color:
-                        pygame.draw.rect(
-                            self.screen,
-                            color,
-                            (x * config.BLOCK_SIZE, y * config.BLOCK_SIZE, config.BLOCK_SIZE, config.BLOCK_SIZE)
-                        )
-            '''
+            
+            font = pygame.font.SysFont(None, 24)
+            score_surf = font.render(f"Score: {self.score}", True, (255,255,255))
+            level_surf = font.render(f"Level: {self.level}", True, (255,255,255))
+            self.screen.blit(score_surf, (5, 5))
+            self.screen.blit(level_surf, (5, 25))
+            
             # Fallbewegung
             if not self.landed:
                 self.fall_timer += self.clock.get_time()
@@ -67,6 +68,9 @@ class Game:
                         self.clear_marked_lines()
                         self.tetromino = self.spawn_new_tetromino()
                         self.landed = False
+                        if self.check_collision(0, 0):
+                            self.game_over()
+                            running = False          # Loop in `run()` beenden
 
             # Tasteneingaben
             for event in pygame.event.get():
@@ -141,11 +145,32 @@ class Game:
         return False
 
     def clear_marked_lines(self):
-        new_grid = [row for row in self.grid if not all(cell and cell["type"] == "color" for cell in row)]
-        lines_removed = config.ROWS - len(new_grid)
-        for _ in range(lines_removed):
+        # 1 ▸ Zeilen herausfiltern, die gelöscht werden
+        new_grid = [
+            row for row in self.grid
+            if not all(cell and cell["type"] == "color" for cell in row)
+        ]
+        removed = config.ROWS - len(new_grid)          # Anzahl gelöschter Zeilen
+
+        # 2 ▸ Raster auffüllen
+        for _ in range(removed):
             new_grid.insert(0, [None for _ in range(config.COLS)])
         self.grid = new_grid
+
+        # 3 ▸ Punkte & Gesamtzähler
+        if removed:
+            self.lines_total += removed
+            self.score += {1: 40, 2: 100, 3: 300, 4: 1200}[removed] * self.level
+
+        # 4 ▸ Level-Logik ***HIER kommt dein Code***
+        old_level = self.level
+        self.level = 1 + self.lines_total // 10        # alle 10 Zeilen ein Level
+
+        if self.level != old_level:
+            # Fallgeschwindigkeit anpassen: Basis 500 ms − 40 ms pro Level,
+            # aber nie schneller als 100 ms
+            self.fall_interval = max(100, 500 - 40 * (self.level - 1))
+
 
     def mark_lines_for_removal(self):
         for y, row in enumerate(self.grid):
@@ -206,3 +231,8 @@ class Game:
         if not self.check_collision(dx, dy):
             self.tetromino.x += dx
             self.tetromino.y += dy
+
+    def game_over(self):
+        print("GAME OVER! Score:", self.score)
+        # optional: Highscore speichern, Meldung zeigen oder ins Hauptmenü
+
