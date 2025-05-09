@@ -9,7 +9,7 @@ Ein personalisiertes Tetris-Spiel, erstellt mit Python und Pygame, mit individue
 - Punktestand, Levelsystem, Game-Over-Screen
 - portable `.exe` (keine Installation nötig)
 
-## 🗃️ Ordnerstruktur
+## Ordnerstruktur
 
 ```bash
 tetris/
@@ -26,6 +26,8 @@ tetris/
 
 ## EXE mit PyInstaller erstellen
 
+(venv aktivieren)
+
 ```bash
 pyinstaller --onefile --windowed `
   --paths . `
@@ -34,20 +36,9 @@ pyinstaller --onefile --windowed `
   main.py
 ```
 
-## Anforderungen
-
-- Python 3.10+
-- pygame
-- pillow (falls `convert_alpha()` o. Icons verwendet werden)
-- pyinstaller (nur für den EXE-Build)
-
-```bash
-pip install pygame pillow pyinstaller
-```
-
 ## Assets
 
-Die Block-Sprites liegen in `assets/` und haben 128×128 px bei voller Transparenz.
+Die Block-Sprites 128×128 px bei voller Transparenz.
 
 ## Weitergabe
 
