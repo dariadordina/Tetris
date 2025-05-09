@@ -1,20 +1,25 @@
 import pygame
-import sys
+import sys, pathlib
 import config
 import random
 from tetromino import Tetromino, L_SHAPE, O_SHAPE, I_SHAPE, S_SHAPE, Z_SHAPE, T_SHAPE, J_SHAPE
 
-SHAPES = [
-    {"matrix": Z_SHAPE, "image": "assets/Z-block.png", "color": (100, 200, 100)}, #...,...
-    {"matrix": L_SHAPE, "image": "assets/L-block.png", "color": (200, 100, 100)}, #kater, grün
-    {"matrix": O_SHAPE, "image": "assets/O-block.png", "color": (100, 100, 200)}, #..., ...
-    {"matrix": T_SHAPE, "image": "assets/T-block.png", "color": (10, 10, 200)}, #..., ...
-    {"matrix": S_SHAPE, "image": "assets/S-block.png", "color": (100, 150, 20)}, #..., ...
-    {"matrix": I_SHAPE, "image": "assets/I-block.png", "color": (10, 150, 200)}, #..., ...
-    {"matrix": J_SHAPE, "image": "assets/J-block.png", "color": (70, 220, 160)}, #..., ...
+def res(rel_path):
+    base = pathlib.Path(getattr(sys, '_MEIPASS', pathlib.Path(__file__).parent))
+    return str(base / rel_path)
 
+SHAPES = [
+    {"matrix": Z_SHAPE, "image": pygame.image.load(res("assets/Z-block.png")), "color": (100, 200, 100)}, #...,...
+    {"matrix": L_SHAPE, "image": pygame.image.load(res("assets/L-block.png")), "color": (200, 100, 100)}, #kater, grün
+    {"matrix": O_SHAPE, "image": pygame.image.load(res("assets/O-block.png")), "color": (100, 100, 200)}, #..., ...
+    {"matrix": T_SHAPE, "image": pygame.image.load(res("assets/T-block.png")), "color": (10, 10, 200)}, #..., ...
+    {"matrix": S_SHAPE, "image": pygame.image.load(res("assets/S-block.png")), "color": (100, 150, 20)}, #..., ...
+    {"matrix": I_SHAPE, "image": pygame.image.load(res("assets/I-block.png")), "color": (10, 150, 200)}, #..., ...
+    {"matrix": J_SHAPE, "image": pygame.image.load(res("assets/J-block.png")), "color": (70, 220, 160)}, #..., ...
 
 ]
+
+
 
 class Game:
     def __init__(self):
@@ -40,7 +45,7 @@ class Game:
         self.state = "play"        # "play" oder "gameover"
         #self.font  = pygame.font.SysFont(None, 36)
         pygame.font.init()
-        self.font  = pygame.font.Font("assets/PixelifySans-Regular.ttf", 36)
+        self.font  = pygame.font.Font(res("assets/PixelifySans-Regular.ttf"), 36)
 
     def run(self):
         self.running = True
@@ -176,7 +181,7 @@ class Game:
 
     def spawn_new_tetromino(self):
             choice = random.choice(SHAPES)
-            image = pygame.image.load(choice["image"]).convert_alpha()
+            image = choice["image"].convert_alpha()
             return Tetromino(3, 0, choice["matrix"], image, choice["color"])
         
     def lock_tetromino(self):
