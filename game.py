@@ -38,7 +38,9 @@ class Game:
         self.level       = 1          # Startlevel
 
         self.state = "play"        # "play" oder "gameover"
-        self.font  = pygame.font.SysFont(None, 36)
+        #self.font  = pygame.font.SysFont(None, 36)
+        pygame.font.init()
+        self.font  = pygame.font.Font("assets/PixelifySans-Regular.ttf", 36)
 
     def run(self):
         self.running = True
@@ -219,16 +221,16 @@ class Game:
                 self.tetromino.y += dy
 
     def render_play(self):
-        self.screen.fill((100, 100, 100))
+        self.screen.fill((238, 233, 228))
 
         # -- Score-Leiste -------------------------------------------------
-        bar_h = 60
-        pygame.draw.rect(self.screen, (40, 40, 40),
+        bar_h = 75
+        pygame.draw.rect(self.screen, (50, 50, 50),
                         (0, 0, config.SCREEN_WIDTH, bar_h))          # fester Balken
 
-        score_s = self.font.render(f"Score: {self.score}", True, (255,255,255))
-        level_s = self.font.render(f"Level: {self.level}", True, (255,255,255))
-        self.screen.blit(score_s, (10, 10))
+        score_s = self.font.render(f"Score: {self.score}", True, (255, 186, 125))
+        level_s = self.font.render(f"Level: {self.level}", True, (255, 186, 125))
+        self.screen.blit(score_s, (10, 0))
         self.screen.blit(level_s, (10, 30))
         # ----------------------------------------------------------------
 
@@ -239,11 +241,11 @@ class Game:
         pygame.display.flip()
 
     def render_gameover(self):
-        self.screen.fill((30, 30, 30))
+        self.screen.fill((255, 186, 125))
 
         # Titel-Text
         text  = self.font.render("GAME OVER", True, (240, 50, 50))
-        text2 = self.font.render(f"Your score: {self.score}", True, (200, 200, 200))
+        text2 = self.font.render(f"Your score: {self.score}", True, (240, 50, 50))
         rect  = text.get_rect(center=(config.SCREEN_WIDTH//2, 150))
         rect2 = text2.get_rect(center=(config.SCREEN_WIDTH//2, 200))
         self.screen.blit(text, rect)
@@ -252,8 +254,8 @@ class Game:
         # Restart-Button
         self.button_rect = pygame.Rect(0, 0, 180, 50)
         self.button_rect.center = (config.SCREEN_WIDTH//2, 300)
-        pygame.draw.rect(self.screen, (70, 180, 70), self.button_rect, border_radius=8)
-        btn_text = self.font.render("Neu starten", True, (0, 0, 0))
+        pygame.draw.rect(self.screen, (240, 50, 50), self.button_rect, border_radius=3)
+        btn_text = self.font.render("RESTART", True, (0, 0, 0))
         self.screen.blit(btn_text, btn_text.get_rect(center=self.button_rect.center))
 
         pygame.display.flip()
